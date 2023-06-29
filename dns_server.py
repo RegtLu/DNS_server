@@ -39,7 +39,6 @@ class DFATree():
         if position.get('isEnd') == None:
             return False
         if time.time()-position['lastTime']>=self.ttl:
-            self.delete(domain)
             return False
         return position['ip']
 
