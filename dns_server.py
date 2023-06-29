@@ -1,4 +1,4 @@
-from dnslib import DNSRecord, QTYPE, RD, SOA, DNSHeader, RR, A
+from dnslib import DNSRecord, QTYPE, DNSHeader, RR, A
 from dns.resolver import Resolver
 import socket
 import logging
