@@ -139,7 +139,10 @@ if __name__ == '__main__':
     udp_sock.bind(('127.0.0.1', 53))
     logging.info('DNS服务器启动')
     while True:
-        message, address = udp_sock.recvfrom(512)
-        t = threading.Thread(target=_dns_handler,
-                             args=(udp_sock, message, address))
-        t.start()
+        try:
+            message, address = udp_sock.recvfrom(512)
+            t = threading.Thread(target=_dns_handler,
+                                args=(udp_sock, message, address))
+            t.start()
+        except Exception as e:
+            logging.error(e)
