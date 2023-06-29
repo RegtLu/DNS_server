@@ -6,12 +6,13 @@ import time
 import json
 import threading
 
+
 class DFATree():
-    def __init__(self,ttl) -> None:
-        self.ttl=ttl
+    def __init__(self, ttl) -> None:
+        self.ttl = ttl
         self.tree = dict()
 
-    def add(self, domain, ip, *lastTime:float):
+    def add(self, domain, ip, *lastTime: float):
         position = self.tree
         for letter in list(domain):
             if letter in position:
@@ -21,12 +22,12 @@ class DFATree():
                 position = position[letter]
         position['isEnd'] = True
         if lastTime:
-            position['lastTime']=lastTime[0]
+            position['lastTime'] = lastTime[0]
         else:
-            position['lastTime']=time.time()
-        position['ip']=ip
-        with open('dict.json','w') as f:
-            json.dump(self.tree,f)
+            position['lastTime'] = time.time()
+        position['ip'] = ip
+        with open('dict.json', 'w') as f:
+            json.dump(self.tree, f)
         return self.tree
 
     def check(self, domain):
@@ -38,11 +39,12 @@ class DFATree():
                 return False
         if position.get('isEnd') == None:
             return False
-        if time.time()-position['lastTime']>=self.ttl:
+        if time.time()-position['lastTime'] >= self.ttl:
             return False
         return position['ip']
 
-dns_tree=DFATree(6000)
+
+dns_tree = DFATree(6000)
 dns_resolver = Resolver()
 dns_resolver.nameservers = ["8.8.8.8", "8.8.4.4"]
 logging.basicConfig(level=logging.DEBUG,
@@ -51,23 +53,26 @@ logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(pathname)s[line:%(lineno)d] - %(levelname)s: %(message)s'
                     )
 
+
 def read_record():
-    with open('dict.json','r') as f:
+    with open('dict.json', 'r') as f:
         try:
-            dns_tree.tree=json.load(f)
+            dns_tree.tree = json.load(f)
         except:
             pass
-    with open('record','r') as f:
-        records=f.readlines()
+    with open('record', 'r') as f:
+        records = f.readlines()
     for record in records:
-        record=record.split('  ')
-        dns_tree.add(record[0],record[1],float(record[2].strip('\n')))
+        record = record.split('  ')
+        dns_tree.add(record[0], record[1], 9999999999.0)
+
 
 def _dns_handler(udp_sock, message, address):
     try:
         return dns_handler(udp_sock, message, address)
     except Exception as e:
         logging.error(e)
+
 
 def get_ip_from_domain(domain):
     domain = domain.lower().strip()
@@ -109,8 +114,8 @@ def dns_handler(s, message, address):
     domain = str(income_record.q.qname).strip('.')
     info = '%s -- %s, from %s' % (qtype, domain, address)
     if qtype == 'A':
-        cache=dns_tree.check(domain)
-        if cache !=False:
+        cache = dns_tree.check(domain)
+        if cache != False:
             ip = cache
             response = reply_for_A(income_record, ip=ip, ttl=60)
             s.sendto(response.pack(), address)
@@ -119,7 +124,7 @@ def dns_handler(s, message, address):
         if ip:
             response = reply_for_A(income_record, ip=ip, ttl=60)
             s.sendto(response.pack(), address)
-            dns_tree.add(domain,ip)
+            dns_tree.add(domain, ip)
             return logging.info(info)
     response = reply_for_not_found(income_record)
     s.sendto(response.pack(), address)
@@ -135,5 +140,6 @@ if __name__ == '__main__':
     logging.info('DNS服务器启动')
     while True:
         message, address = udp_sock.recvfrom(512)
-        t=threading.Thread(target=_dns_handler,args=(udp_sock, message, address))
+        t = threading.Thread(target=_dns_handler,
+                             args=(udp_sock, message, address))
         t.start()
