@@ -39,8 +39,30 @@ class DFATree():
         if position.get('isEnd') == None:
             return False
         if time.time()-position['lastTime']>=self.ttl:
+            self.delete(domain)
             return False
         return position['ip']
+
+    def delete(self,domain):
+        position = self.tree
+        lastNode=position
+        lastLetter=domain[0]
+        length=len(domain)
+        for i in range(length):
+            letter=domain[i]
+            if letter in position:
+                position = position[letter]
+                if len(position)>1:
+                    lastNode=position
+                    if i<length-1 :
+                        lastLetter=domain[i+1]
+                    else:
+                        position.pop('isEnd')
+                        return self.tree
+            else:
+                return self.tree
+        lastNode.pop(lastLetter)
+        return self.tree
 
 dns_tree=DFATree(6000)
 dns_resolver = Resolver()
