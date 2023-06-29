@@ -60,7 +60,7 @@ def read_record():
     with open('record','r') as f:
         records=f.readlines()
     for record in records:
-        record=record.split('  ')#domain和ip之间用两个Space分隔
+        record=record.split('  ')
         dns_tree.add(record[0],record[1],float(record[2].strip('\n')))
 
 def _dns_handler(udp_sock, message, address):
