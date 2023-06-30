@@ -12,7 +12,7 @@ class DFATree():
         self.ttl = ttl
         self.tree = dict()
 
-    def add(self, domain, ip, *lastTime: float):
+    def add(self, qtype, domain, target, *lastTime: float):
         position = self.tree
         for letter in list(domain):
             if letter in position:
@@ -25,7 +25,10 @@ class DFATree():
             position['lastTime'] = lastTime[0]
         else:
             position['lastTime'] = time.time()
-        position['ip'] = ip
+        if qtype=='CNAME':
+            position['domain'] = target
+        elif qtype=='A':
+            position['ip'] = target
         with open('dict.json', 'w') as f:
             json.dump(self.tree, f)
         return self.tree
@@ -41,7 +44,10 @@ class DFATree():
             return False
         if time.time()-position['lastTime'] >= self.ttl:
             return False
-        return position['ip']
+        if position.get('ip'):
+            return position['ip']
+        elif position.get('domain'):
+            return self.check(position['domain'])
 
 
 dns_tree = DFATree(6000)
@@ -55,16 +61,16 @@ logging.basicConfig(level=logging.DEBUG,
 
 
 def read_record():
-    with open('dict.json', 'r') as f:
-        try:
-            dns_tree.tree = json.load(f)
-        except:
-            pass
+    #with open('dict.json', 'r') as f:
+    #    try:
+    #        dns_tree.tree = json.load(f)
+    #    except:
+    #        pass
     with open('record', 'r') as f:
         records = f.readlines()
     for record in records:
         record = record.split('  ')
-        dns_tree.add(record[0], record[1], 9999999999.0)
+        dns_tree.add(record[0],record[1], record[2].strip('\n'), 9999999999.0)
 
 
 def _dns_handler(udp_sock, message, address):
@@ -124,7 +130,7 @@ def dns_handler(s, message, address):
         if ip:
             response = reply_for_A(income_record, ip=ip, ttl=60)
             s.sendto(response.pack(), address)
-            dns_tree.add(domain, ip)
+            dns_tree.add('A',domain, ip)
             return logging.info(info)
     response = reply_for_not_found(income_record)
     s.sendto(response.pack(), address)
@@ -136,7 +142,7 @@ if __name__ == '__main__':
     read_record()
     logging.info('记录读取完毕')
     udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    udp_sock.bind(('127.0.0.1', 53))
+    udp_sock.bind(('0.0.0.0', 53))
     logging.info('DNS服务器启动')
     while True:
         try:

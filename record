@@ -1,1 +1,3 @@
-example.record  127.0.0.1
+A  www.yg.com  43.142.44.156
+A  yanggao.yg  43.142.44.156
+CNAME  yg.yg  yanggao.yg
